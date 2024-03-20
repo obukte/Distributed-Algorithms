@@ -11,7 +11,6 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-        // Configurable delay for demonstration purposes
         Duration initialDelay = Duration.ofSeconds(1);
         Duration calculationDelay = Duration.ofSeconds(1);
 
@@ -39,8 +38,6 @@ public class Main {
                             () -> nodeA.tell(new LaiYangActor.MarkerMessage()), // Start snapshot from NodeA
                             context.getSystem().executionContext()
                     );
-
-                    // Optionally, implement a mechanism to monitor the completion of the snapshot process across the network.
 
                     return Behaviors.empty();
                 }),
