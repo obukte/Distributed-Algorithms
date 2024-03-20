@@ -10,9 +10,6 @@ This repository contains Java implementations of various distributed algorithms,
 - - Snapshot algorithms:
     - - Chandy-Lamport algorithm
     - - Lai-Yang algorithm
-## Project Structure
-
-The project is organized into the following main directories:
 
 ## Project Structure
 
