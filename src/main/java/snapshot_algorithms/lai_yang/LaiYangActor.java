@@ -133,14 +133,24 @@ public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
                 .onMessage(AddNeighbor.class, this::onAddNeighbor)
                 .onMessage(QueryNeighbors.class, this::onQueryNeighbors)
                 .onMessage(PresnapMessage.class, this::onPresnapMessage)
-                .onMessage(TriggerSnapshot.class, msg -> {prepareForSnapshot();return Behaviors.same();})
+                .onMessage(TriggerSnapshot.class, this::onTriggerSnapshot)
                 .build();
     }
 
     private Behavior<Message> onPresnapMessage(PresnapMessage message) {
-        incomingMessageCounters.compute(message.from, (k, v) -> v == null ? message.count : v + message.count);
+        incomingMessageCounters.compute(message.from, (k, v) -> {
+            int newValue = (v == null ? 0 : v) + message.count;
+            getContext().getLog().info("Updated counter for {} from {} to {} upon receiving PresnapMessage.", message.from.path().name(), v, newValue);
+            return newValue;
+        });
         if (!recorded) {
             getContext().getSelf().tell(new TriggerSnapshot());
+        }
+        // Check if termination condition is met
+        boolean shouldTerminate = incomingMessageCounters.values().stream().allMatch(count -> count <= 0);
+        if (shouldTerminate) {
+            getContext().getLog().info("Termination condition met after processing PresnapMessage.");
+            terminate();
         }
         return this;
     }
@@ -161,13 +171,50 @@ public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
         getContext().getLog().info("Initiating snapshot process...");
         if (!recorded) {
             recorded = true;
-            takeSnapshot();
+            snapshotTimestamp = LocalDateTime.now();
+
             neighbors.forEach(neighbor -> {
                 int count = incomingMessageCounters.getOrDefault(neighbor, 0) + 1;
                 neighbor.tell(new PresnapMessage(count, getContext().getSelf()));
+                incomingMessageCounters.put(neighbor, count);
             });
+
+            getContext().getLog().info("{} is taking snapshot...", getContext().getSelf().path().name());
+
+            // Prepare snapshot content including in-transit messages
+            String formattedTimestamp = snapshotTimestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            String snapshotContent = prepareSnapshotContent(formattedTimestamp);
+
+            // Save snapshot to file
+            saveSnapshotToFile(snapshotContent, formattedTimestamp);
+
+            // Clear in-transit messages and check for completion
+            inTransitMessages.clear();
+            checkSnapshotCompletion();
         }
         return this;
+    }
+
+    private Behavior<Message> onTriggerSnapshot(TriggerSnapshot message) {
+        getContext().getLog().info("Received TriggerSnapshot (Recorded: {})", recorded);
+        if (!recorded) {
+            initiateSnapshotProcess();
+        }
+        return this;
+    }
+
+    private void initiateSnapshotProcess() {
+        getContext().getLog().info("Initiating snapshot process...");
+        recorded = true;
+        snapshotTimestamp = LocalDateTime.now();
+
+        neighbors.forEach(neighbor -> {
+            int count = incomingMessageCounters.getOrDefault(neighbor, 0) + 1;
+            neighbor.tell(new PresnapMessage(count, getContext().getSelf()));
+            incomingMessageCounters.put(neighbor, count);
+        });
+
+        saveStateAndMessages();
     }
 
     private Behavior<Message> onPrintState(PrintState message) {
@@ -178,11 +225,7 @@ public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
     private Behavior<Message> onMarkerMessage(MarkerMessage message) {
         getContext().getLog().info("Received MarkerMessage (Recorded: {})", recorded);
         if (!recorded) {
-            recorded = true;
-            takeSnapshot();
-            for (ActorRef<Message> neighbor : neighbors) {
-                neighbor.tell(new MarkerMessage());
-            }
+            getContext().getSelf().tell(new TriggerSnapshot());
         }
         return this;
     }
@@ -222,46 +265,61 @@ public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
         message.replyTo.tell(new NeighborsResponse(neighborPaths));
         return this;
     }
-
-    private void prepareForSnapshot() {
-        if (!recorded) {
-            recorded = true;
+    private void saveStateAndMessages() {
+        // Ensure snapshotTimestamp is set
+        if (snapshotTimestamp == null) {
             snapshotTimestamp = LocalDateTime.now();
-            takeSnapshot();
-            neighbors.forEach(neighbor -> {
-                int count = incomingMessageCounters.getOrDefault(neighbor, 0) + 1;
-                neighbor.tell(new PresnapMessage(count, getContext().getSelf()));
-            });
         }
-    }
-
-    private void takeSnapshot() {
-        getContext().getLog().info("Taking snapshot...");
-        snapshotTimestamp = LocalDateTime.now();
         String formattedTimestamp = snapshotTimestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
+        // Prepare the content of the snapshot
+        String snapshotContent = prepareSnapshotContent(formattedTimestamp);
+
+        // Save the snapshot to a file
+        saveSnapshotToFile(snapshotContent, formattedTimestamp);
+
+        // Optional: Log that the snapshot process has concluded for this actor
+        getContext().getLog().info("Snapshot process completed for {}.", getContext().getSelf().path().name());
+    }
+
+
+
+    private String prepareSnapshotContent(String formattedTimestamp) {
+        // Serialize in-transit messages
         List<String> inTransitMessagesSerialized = inTransitMessages.stream()
                 .map(msg -> String.format("{\"from\": \"%s\", \"value\": %d, \"recorded\": %b}",
                         msg.from.path().name(), msg.value, msg.isRecorded))
-                .toList();
-
+                .collect(Collectors.toList());
         String inTransitMessagesJson = inTransitMessagesSerialized.toString();
 
-        String snapshotContent = String.format(
-                "{\"Timestamp\": \"%s\", \"State\": %d, \"InTransitMessages\": %s}",
-                formattedTimestamp,
-                state,
-                inTransitMessagesJson
-        );
+        // Serialize counters for each channel
+        List<String> countersSerialized = incomingMessageCounters.entrySet().stream()
+                .map(entry -> String.format("\"%s\": %d", entry.getKey().path().name(), entry.getValue()))
+                .collect(Collectors.toList());
+        String countersJson = "{" + String.join(", ", countersSerialized) + "}";
 
+        // Compile the snapshot content
+        String snapshotContent = String.format(
+                "{\"Timestamp\": \"%s\", \"State\": %d, \"InTransitMessages\": %s, \"Counters\": %s}",
+                formattedTimestamp, state, inTransitMessagesJson, countersJson);
+
+        return snapshotContent;
+    }
+
+    private void saveSnapshotToFile(String snapshotContent, String formattedTimestamp) {
         String directoryPath = "snapshots";
         File directory = new File(directoryPath);
         if (!directory.exists()) {
-            directory.mkdir();
+            boolean wasSuccessful = directory.mkdir();
+            if (!wasSuccessful) {
+                getContext().getLog().error("Failed to create snapshot directory");
+                return;
+            }
         }
 
         String nodeName = getContext().getSelf().path().name();
-        String filePath = directoryPath + "/snapshot_" + nodeName + "_" + formattedTimestamp.replace(":", "-").replace("T", "_") + ".json";
+        String fileName = String.format("snapshot_%s_%s.json", nodeName, formattedTimestamp.replace(":", "-").replace("T", "_"));
+        String filePath = directoryPath + "/" + fileName;
 
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(snapshotContent);
@@ -269,10 +327,6 @@ public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
         } catch (IOException e) {
             getContext().getLog().error("Failed to save snapshot", e);
         }
-
-        // Clear in-transit messages after taking the snapshot since they have now been recorded
-        inTransitMessages.clear();
-        checkSnapshotCompletion();
     }
 
     private void checkSnapshotCompletion() {

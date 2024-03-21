@@ -74,11 +74,11 @@ public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Mess
     }
 
     // Call this method when you want to perform the basic calculation
-    private void performCalculationAndForward(int value, ActorRef<Message> sender) {
+    private void performCalculationAndForward(int value, ActorRef<Message> receiver) {
         this.personalState = value * 2; // Doubles the value received.
-        getContext().getLog().info("Value {} received from {}, doubled new value: {}", value, sender.path().name(), personalState);
+        getContext().getLog().info("Value {} received from {}, doubled new value: {}", value, receiver.path().name(), personalState);
         // Forward the updated value to a neighbor
-        ActorRef<Message> neighbor = selectNeighbor(sender);
+        ActorRef<Message> neighbor = selectNeighbor(receiver);
         if (neighbor != null) {
             neighbor.tell(new BasicMessage(personalState, getContext().getSelf()));
             getContext().getLog().info("Forwarding new value {} to {}", personalState, neighbor.path().name());
@@ -150,7 +150,7 @@ public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Mess
 
         // If marker messages have been received on all incoming channels, then terminate.
         if (marker.values().stream().allMatch(Boolean::booleanValue)) {
-            getContext().getLog().info("All markers received. Preparing to terminate.");
+            getContext().getLog().info("All markers received at {}. Preparing to terminate.", getContext().getSelf().path().name());
             return terminate();
         }
 
@@ -169,7 +169,7 @@ public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Mess
 
     private Behavior<Message> terminate() {
         // Implement termination logic. This could involve cleanup or preparing for shutdown.
-        getContext().getLog().info("Snapshot protocol complete. Terminating actor.");
+        getContext().getLog().info("Snapshot protocol complete. Terminating {} actor.", getContext().getSelf().path().name());
 
         return Behaviors.stopped();
     }
