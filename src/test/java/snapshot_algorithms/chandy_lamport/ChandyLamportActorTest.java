@@ -222,7 +222,6 @@ public class ChandyLamportActorTest {
             File[] snapshotFiles = snapshotsDir.listFiles(
                     (dir, name) -> name.startsWith("snapshot_" + nodeName) && name.endsWith(".json"));
             assertTrue(nodeName + " should have a snapshot file", snapshotFiles != null && snapshotFiles.length > 0);
-            // Optionally parse and verify the state of each node from its snapshot file
         }
 
         testKit.shutdownTestKit();
