@@ -18,6 +18,8 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
 
     public static final class InitiateSnapshot implements Message {}
 
+    public static final class TerminateActor implements Message {}
+
     private final Map<ActorRef<Message>, List<Message>> state;
     private Map<String, Integer> vectorClock;
     private int personalState;
@@ -48,12 +50,13 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
                 .onMessage(InitiateSnapshot.class, this::onInitiateSnapshot)
                 .onMessage(BasicMessage.class, this::onBasicMessageAndForward)
                 .onMessage(AddNeighbor.class, this::onAddNeighbor)
+                .onMessage(TerminateActor.class, this::onTerminateActor)
                 .build();
     }
 
-    public PetersonKearnsActor(ActorContext<Message> context, Set<ActorRef<Message>> neighbors) {
+    public PetersonKearnsActor(ActorContext<Message> context, Set<ActorRef<Message>> neighbors, int initialState) {
         super(context);
-        this.personalState = 0;
+        this.personalState = initialState;
         this.state = new HashMap<>();
         this.vectorClock = new HashMap<>();
         neighbors.forEach(neighbor -> {
@@ -61,8 +64,8 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
             vectorClock.put(neighbor.path().name(), 0); // Initialize vector clock for each neighbor
         });
     }
-    public static Behavior<Message> create(Set<ActorRef<Message>> initialNeighbors) {
-        return Behaviors.setup(context -> new PetersonKearnsActor(context, initialNeighbors));
+    public static Behavior<Message> create(Set<ActorRef<Message>> initialNeighbors, int initialState) {
+        return Behaviors.setup(context -> new PetersonKearnsActor(context, initialNeighbors, initialState));
     }
 
     private Behavior<Message> onInitiateSnapshot(InitiateSnapshot message) {
@@ -77,6 +80,17 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
         state.get(message.from).add(message);
         incrementVectorClock(getContext().getSelf().path().name());
         return this;
+    }
+
+    private Behavior<Message> onTerminateActor(TerminateActor message) {
+        getContext().getLog().info("Terminating {} actor.", getContext().getSelf().path().name());
+        performFinalActions();
+        return Behaviors.stopped();
+    }
+
+    private void performFinalActions() {
+
+        getContext().getLog().info("Final actions completed.");
     }
 
     private Behavior<Message> onBasicMessageAndForward(BasicMessage message) {
