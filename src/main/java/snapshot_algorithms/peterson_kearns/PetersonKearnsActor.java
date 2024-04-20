@@ -44,13 +44,34 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
         }
     }
 
+    public static final class SetState implements Message {
+        public final int newState;
+        public final Map<String, Integer> newVectorClock;
+
+        public SetState(int newState, Map<String, Integer> newVectorClock) {
+            this.newState = newState;
+            this.newVectorClock = newVectorClock;
+        }
+    }
+
+    public static class SentMessageInfo {
+        final BasicMessage message;
+        final Map<String, Integer> vectorClockAtSend;
+
+        public SentMessageInfo(BasicMessage message, Map<String, Integer> vectorClockAtSend) {
+            this.message = message;
+            this.vectorClockAtSend = new HashMap<>(vectorClockAtSend);
+        }
+    }
+
     @Override
     public Receive<Message> createReceive() {
         return newReceiveBuilder()
                 .onMessage(InitiateSnapshot.class, this::onInitiateSnapshot)
-                .onMessage(BasicMessage.class, this::onBasicMessageAndForward)
+                .onMessage(BasicMessage.class, this::onBasicMessage)
                 .onMessage(AddNeighbor.class, this::onAddNeighbor)
                 .onMessage(TerminateActor.class, this::onTerminateActor)
+                .onMessage(SetState.class, this::onSetState)
                 .build();
     }
 
@@ -59,6 +80,8 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
         this.personalState = initialState;
         this.state = new HashMap<>();
         this.vectorClock = new HashMap<>();
+        // Initialize the vector clock with zero for each neighbor and the actor itself
+        this.vectorClock.put(context.getSelf().path().name(), 0);
         neighbors.forEach(neighbor -> {
             state.put(neighbor, new ArrayList<>());
             vectorClock.put(neighbor.path().name(), 0); // Initialize vector clock for each neighbor
@@ -77,29 +100,32 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
 
     private Behavior<Message> onBasicMessage(BasicMessage message) {
         getContext().getLog().info("{} received BasicMessage with value: {} from {}", getContext().getSelf().path().name(), message.value, message.from.path().name());
-        state.get(message.from).add(message);
-        incrementVectorClock(getContext().getSelf().path().name());
+        state.computeIfAbsent(message.from, k -> new ArrayList<>()).add(message);
+        mergeVectorClocks(message.vectorClock);
+        personalState = message.value;
+        incrementVectorClock(getContext().getSelf().path().name());  // Ensure this is done on message processing
         return this;
     }
 
     private Behavior<Message> onTerminateActor(TerminateActor message) {
         getContext().getLog().info("Terminating {} actor.", getContext().getSelf().path().name());
-        performFinalActions();
-        return Behaviors.stopped();
-    }
-
-    private void performFinalActions() {
-
-        getContext().getLog().info("Final actions completed.");
+        return Behaviors.stopped(() -> getContext().getLog().info("Actor has been stopped."));
     }
 
     private Behavior<Message> onBasicMessageAndForward(BasicMessage message) {
         getContext().getLog().info("{} received BasicMessage with value: {} from {}", getContext().getSelf().path().name(), message.value, message.from.path().name());
-        state.get(message.from).add(message);
+        state.computeIfAbsent(message.from, k -> new ArrayList<>()).add(message);
         mergeVectorClocks(message.vectorClock);
-        incrementVectorClock(getContext().getSelf().path().name());
         personalState += message.value;
+        getContext().getLog().info("{}'s new personal state: {}, message value: {} ", getContext().getSelf().path().name(), personalState, message.value);
         forwardMessageToAll(message.value);
+        return this;
+    }
+
+    private Behavior<Message> onSetState(SetState message) {
+        this.personalState = message.newState;
+        this.vectorClock = new HashMap<>(message.newVectorClock);
+        getContext().getLog().info("State and vector clock updated at {} by checkpoint manager.", getContext().getSelf().path().name());
         return this;
     }
 
@@ -131,7 +157,6 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
     private Behavior<Message> onAddNeighbor(AddNeighbor message) {
         // Add the neighbor to the set of neighbors
         this.state.put(message.neighbor, new LinkedList<>()); // Initialize message queue for the new neighbor
-
         getContext().getLog().info("{} added as neighbor added to {}", message.neighbor.path().name(), getContext().getSelf().path().name());
 
         return this; // Return the current behavior
@@ -149,8 +174,13 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
 
         // Serialize the vector clock
         String vectorClockJson = vectorClock.entrySet().stream()
-                .map(entry -> "\"" + entry.getKey() + "\": " + entry.getValue())
+                .map(entry -> {
+                    String logEntry = "\"" + entry.getKey() + "\": " + entry.getValue();
+                    getContext().getLog().info("Vector Clock Entry: {}", logEntry); // Log each vector clock entry
+                    return logEntry;
+                })
                 .collect(Collectors.joining(", ", "{", "}"));
+        getContext().getLog().info("Final Vector Clock: {}", vectorClockJson); // Log the complete vector clock JSON
 
         // Serialize the channel states with messages
         String channelStatesJson = state.entrySet().stream()
@@ -160,9 +190,12 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
                             .filter(message -> message instanceof BasicMessage)
                             .map(message -> ((BasicMessage) message).value)
                             .collect(Collectors.toList());
-                    return "\"" + neighborName + "\": " + messages.toString();
+                    String channelEntry = "\"" + neighborName + "\": " + messages.toString();
+                    getContext().getLog().info("Channel State Entry for {}: {}", neighborName, channelEntry); // Log each channel state entry
+                    return channelEntry;
                 })
                 .collect(Collectors.joining(", ", "{", "}"));
+        getContext().getLog().info("Final Channel States: {}", channelStatesJson); // Log the complete channel states JSON
 
         // Combine all serialized data into one snapshot string
         String formattedTimestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -173,6 +206,9 @@ public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Me
                 vectorClockJson,
                 channelStatesJson
         );
+
+        // Log the final snapshot content
+        getContext().getLog().info("Snapshot Content: {}", snapshotContent);
 
         // Write the snapshot to a file
         writeSnapshotToFile(formattedTimestamp, snapshotContent);
