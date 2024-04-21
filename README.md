@@ -10,22 +10,25 @@ This repository contains Java implementations of various distributed algorithms,
 - - Snapshot algorithms:
     - - Chandy-Lamport algorithm
     - - Lai-Yang algorithm
-
+    - - Peterson-Kearns Rollback Recovery Algorithm
 ## Project Structure
 
 - `src/main/java`: Contains the source code for the project.
     - `snapshot_algorithms`: Implementation of snapshot algorithms for distributed systems.
         - `chandy_lamport`: The Chandy-Lamport algorithm for distributed snapshots.
         - `lai_yang`: The Lai-Yang algorithm for consistent global snapshots.
+        - `peterson_kearns`: Peterson-Kearns algorithm for centralized rollback recovery.
+            - `CheckpointRecoveryManager.java`: Manages network configuration, initiates snapshots, and recovers actors upon crashes using snapshots and message logs.
+            - `PetersonKearnsActor.java`: Represents a node in the network, capable of sending, receiving, and logging messages,
     - `util`: Utility classes supporting algorithm functionality.
         - `GraphParser`: Parses .dot files from the `resources/graph/` directory to create a graph of actors, embodying the network topology for the simulation.
     - `resources`: Holds configuration settings and graph definitions.
         - `graph`: Directory containing the primary `.dot` file (e.g., `NetGraph.dot`) that represents the network graph used for the simulation.
 
 - `src/test/java`: Test suites for the source code.
-    - `snapshot_algorithms`: Test cases for snapshot algorithms.
-    - `util`: Tests for utility classes to ensure accurate parsing and functionality.
-        - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation.
+    - `snapshot_algorithms`: Test cases for snapshot algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation. After running the tests, snapshot files for various actors and states in the system are generated and saved in the `snapshots` directory.
+  - `util`: Tests for utility classes to ensure accurate parsing and functionality.
+      - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation.
 
 
 ### Prerequisites

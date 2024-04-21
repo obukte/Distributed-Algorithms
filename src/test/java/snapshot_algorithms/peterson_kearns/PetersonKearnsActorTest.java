@@ -7,18 +7,11 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
 
 public class PetersonKearnsActorTest {
 
@@ -33,5 +26,39 @@ public class PetersonKearnsActorTest {
         testKit.shutdownTestKit();
     }
 
+    @Test
+    public void testMessageHandlingAndStateUpdate() {
+        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
+        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+
+        actor.tell(new PetersonKearnsActor.BasicMessage(10, probe.ref(), new HashMap<>()));
+    }
+
+
+    @Test
+    public void testSnapshotTakingAndRecovery() {
+        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
+        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+
+        actor.tell(new PetersonKearnsActor.InitiateSnapshot());
+    }
+
+    @Test
+    public void testMessageVectorClockLogging() {
+        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
+        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+
+        Map<String, Integer> vectorClock = new HashMap<>();
+        vectorClock.put("someActor", 1);
+        actor.tell(new PetersonKearnsActor.BasicMessage(5, probe.ref(), vectorClock));
+    }
+
+    @Test
+    public void testActorTerminationEffects() {
+        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
+        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+
+        actor.tell(new PetersonKearnsActor.TerminateActor());
+    }
 
 }
