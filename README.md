@@ -50,3 +50,6 @@ This repository contains Java implementations of various distributed algorithms,
     ```bash
     mvn clean install
     ```
+### Simulation
+
+- To simulate any of the snapshot algorithms, run the Main class located at `src/main/java/snapshot_algorithms/Main.java` . This class provides a command-line interface to select different algorithms to simulate. Each option initiates a simulation using predefined .dot files, demonstrating the chosen algorithm's behavior within a configured network of actors.
