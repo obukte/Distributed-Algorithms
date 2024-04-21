@@ -7,10 +7,11 @@ This repository contains Java implementations of various distributed algorithms,
 - **Graph Structure Integration**: This project integrates with graph structures defined by `.dot` files, which are generated using the [NetGameSim application](https://github.com/0x1DOCD00D/NetGameSim). NetGameSim is an experimental platform designed to create large-scale random graphs and their perturbations, providing a visual and structural foundation for network simulation within this project.
 - Simulation of network nodes as Akka actors, which interact in a distributed system to demonstrate algorithm behaviors.
 - Implementation of the following algorithms:
-- - Snapshot algorithms:
+  - Snapshot algorithms:
     - - Chandy-Lamport algorithm
     - - Lai-Yang algorithm
     - - Peterson-Kearns Rollback Recovery Algorithm
+
 ## Project Structure
 
 - `src/main/java`: Contains the source code for the project.
@@ -29,7 +30,6 @@ This repository contains Java implementations of various distributed algorithms,
     - `snapshot_algorithms`: Test cases for snapshot algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation. After running the tests, snapshot files for various actors and states in the system are generated and saved in the `snapshots` directory.
   - `util`: Tests for utility classes to ensure accurate parsing and functionality.
       - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation.
-
 
 ### Prerequisites
 
