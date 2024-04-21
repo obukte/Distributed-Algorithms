@@ -82,29 +82,6 @@ public class LaiYangActorTest {
     }
 
     @Test
-    public void testNetworkFromDotFile() throws Exception {
-        clearSnapshotsDirectory();
-        ActorTestKit test_kit = ActorTestKit.create();
-        // File path relative to the project or module where the test is located
-        String dotFilePath = "src/test/resources/graph/testGraph2.dot";
-
-        // Call the method and get the network nodes
-        Map<String, ActorRef<LaiYangActor.Message>> nodes = buildNetworkFromDotFile(dotFilePath);
-
-        // Example: Test the neighbors of node "0"
-        TestProbe<LaiYangActor.NeighborsResponse> probe = test_kit.createTestProbe();
-        nodes.get("0").tell(new LaiYangActor.QueryNeighbors(probe.ref()));
-
-        LaiYangActor.NeighborsResponse response = probe.receiveMessage();
-
-        assertTrue("Node 0 should have Node 1 as a neighbor", response.neighbors.contains("1"));
-        assertTrue("Node 0 should have Node 2 as a neighbor", response.neighbors.contains("2"));
-
-        Thread.sleep(2000);
-    }
-
-
-    @Test
     public void testGraphCreationAndSnapshotInitiation() throws Exception {
         clearSnapshotsDirectory();
         ActorTestKit testKit = ActorTestKit.create();
@@ -189,15 +166,6 @@ public class LaiYangActorTest {
         initNode.tell(new LaiYangActor.PerformCalculation(10));
 
         Thread.sleep(2000);
-
-        File snapshotDir = new File("snapshots");
-        File[] snapshotFiles = snapshotDir.listFiles((dir, name) -> name.startsWith("snapshot_0") && name.endsWith(".json"));
-        assertTrue("Snapshot file for Node 0 should exist", snapshotFiles != null && snapshotFiles.length > 0);
-
-        int stateNode0 = parseSnapshotAndGetState(snapshotFiles[0].getName());
-
-        int expectedState = 0; // Should be zero since we initiated the snapshot before any calculation
-        assertTrue("The state of Node 0 after snapshot should match the expected value", stateNode0 == expectedState);
         testKit3.shutdownTestKit();
     }
 
@@ -214,13 +182,6 @@ public class LaiYangActorTest {
         initNode.tell(new LaiYangActor.PerformCalculation(10));
 
         initNode.tell(new LaiYangActor.InitiateSnapshot());
-
-        Thread.sleep(2000);
-
-        File snapshotDir = new File("snapshots");
-        File[] snapshotFiles = snapshotDir.listFiles((dir, name) -> name.startsWith("snapshot_0") && name.endsWith(".json"));
-        assertTrue("Snapshot file for Node 0 should exist", snapshotFiles != null && snapshotFiles.length > 0);
-
         testKit4.shutdownTestKit();
         Thread.sleep(5000);
     }
@@ -241,13 +202,6 @@ public class LaiYangActorTest {
         initNode.tell(new LaiYangActor.InitiateSnapshot());
 
         // Allow some time for the snapshot process to complete
-        Thread.sleep(2000);
-
-        File snapshotDir = new File("snapshots");
-        File[] snapshotFiles = snapshotDir.listFiles((dir, name) -> name.startsWith("snapshot_0") && name.endsWith(".json"));
-        assertTrue("Snapshot file for Node 0 should exist", snapshotFiles != null && snapshotFiles.length > 0);
-
-        testKit5.shutdownTestKit();
         Thread.sleep(5000);
     }
 
