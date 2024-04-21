@@ -8,9 +8,9 @@ This repository contains Java implementations of various distributed algorithms,
 - Simulation of network nodes as Akka actors, which interact in a distributed system to demonstrate algorithm behaviors.
 - Implementation of the following algorithms:
   - Snapshot algorithms:
-    - - Chandy-Lamport algorithm
-    - - Lai-Yang algorithm
-    - - Peterson-Kearns Rollback Recovery Algorithm
+    - Chandy-Lamport algorithm
+    - Lai-Yang algorithm
+    - Peterson-Kearns Rollback Recovery Algorithm
 
 ## Project Structure
 
