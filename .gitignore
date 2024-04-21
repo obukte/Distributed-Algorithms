@@ -42,3 +42,4 @@ snapshots/
 
 ### Logs ###
 logs/
+*.log
