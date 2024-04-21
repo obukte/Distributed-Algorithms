@@ -6,6 +6,7 @@ import akka.actor.typed.ActorRef;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import snapshot_algorithms.Message;
 import util.GraphParser;
 
 import java.io.File;
@@ -29,14 +30,16 @@ public class LaiYangActorTest {
     }
 
     @AfterClass
-    public static void teardown() {
+    public static void teardown() throws InterruptedException {
+
         testKit.shutdownTestKit();
+        Thread.sleep(2000);
     }
 
-    public Map<String, ActorRef<LaiYangActor.Message>> buildNetworkFromDotFile(String dotFilePath) throws Exception {
+    public Map<String, ActorRef<Message>> buildNetworkFromDotFile(String dotFilePath) throws Exception {
         List<GraphParser.Edge> edges = GraphParser.parseDotFile(dotFilePath);
 
-        Map<String, ActorRef<LaiYangActor.Message>> nodes = new HashMap<>();
+        Map<String, ActorRef<Message>> nodes = new HashMap<>();
 
         edges.forEach(edge -> {
             nodes.computeIfAbsent(edge.getSource(), sourceId -> testKit.spawn(LaiYangActor.create(new HashSet<>()), sourceId));
@@ -44,8 +47,8 @@ public class LaiYangActorTest {
         });
 
         edges.forEach(edge -> {
-            ActorRef<LaiYangActor.Message> sourceNode = nodes.get(edge.getSource());
-            ActorRef<LaiYangActor.Message> destinationNode = nodes.get(edge.getDestination());
+            ActorRef<Message> sourceNode = nodes.get(edge.getSource());
+            ActorRef<Message> destinationNode = nodes.get(edge.getDestination());
             sourceNode.tell(new LaiYangActor.AddNeighbor(destinationNode));
         });
 
@@ -83,13 +86,11 @@ public class LaiYangActorTest {
 
     @Test
     public void testGraphCreationAndSnapshotInitiation() throws Exception {
-        clearSnapshotsDirectory();
-        ActorTestKit testKit = ActorTestKit.create();
 
         // Create nodes
-        ActorRef<LaiYangActor.Message> nodeA = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeA");
-        ActorRef<LaiYangActor.Message> nodeB = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeB");
-        ActorRef<LaiYangActor.Message> nodeC = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeC");
+        ActorRef<Message> nodeA = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeA");
+        ActorRef<Message> nodeB = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeB");
+        ActorRef<Message> nodeC = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeC");
 
         // Dynamically add neighbors using AddNeighbor message
         nodeA.tell(new LaiYangActor.AddNeighbor(nodeB));
@@ -100,7 +101,7 @@ public class LaiYangActorTest {
         nodeA.tell(new LaiYangActor.InitiateSnapshot());
 
         // Allow some time for the snapshot initiation to propagate
-        Thread.sleep(1000); // Adjust sleep time as needed
+        Thread.sleep(2000);
 
         File snapshotsDir = new File("snapshots");
         File[] files = snapshotsDir.listFiles((dir, name) -> name.startsWith("snapshot_NodeA") && name.endsWith(".json"));
@@ -108,30 +109,27 @@ public class LaiYangActorTest {
 
         int stateNodeA = parseSnapshotAndGetState(files[files.length - 1].getName());
 
+        Thread.sleep(2000);
+
         assertTrue("The state of NodeA after snapshot should be 20", stateNodeA == 0);
 
-
-        // Additional assertions can be added to verify the snapshot state of other nodes
-
-        testKit.shutdownTestKit();
         Thread.sleep(2000);
     }
 
     @Test
     public void testSnapshotCreationAndContent() throws Exception {
         clearSnapshotsDirectory();
-        ActorTestKit testKit2 = ActorTestKit.create();
 
-        ActorRef<LaiYangActor.Message> nodeA = testKit2.spawn(LaiYangActor.create(new HashSet<>()), "NodeA");
-        ActorRef<LaiYangActor.Message> nodeB = testKit2.spawn(LaiYangActor.create(new HashSet<>()), "NodeB");
-        ActorRef<LaiYangActor.Message> nodeC = testKit2.spawn(LaiYangActor.create(new HashSet<>()), "NodeC");
-        ActorRef<LaiYangActor.Message> nodeD = testKit2.spawn(LaiYangActor.create(new HashSet<>()), "NodeD");
+        ActorRef<Message> nodeA = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeA");
+        ActorRef<Message> nodeB = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeB");
+        ActorRef<Message> nodeC = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeC");
+        ActorRef<Message> nodeD = testKit.spawn(LaiYangActor.create(new HashSet<>()), "NodeD");
 
         // Connect nodes
         nodeA.tell(new LaiYangActor.AddNeighbor(nodeB));
         nodeB.tell(new LaiYangActor.AddNeighbor(nodeC));
         nodeC.tell(new LaiYangActor.AddNeighbor(nodeD));
-        nodeD.tell(new LaiYangActor.AddNeighbor(nodeA)); // Making it a circle for example
+        nodeD.tell(new LaiYangActor.AddNeighbor(nodeA));
 
         // Perform a calculation to change state
         nodeA.tell(new LaiYangActor.PerformCalculation(10));
@@ -140,7 +138,7 @@ public class LaiYangActorTest {
         nodeA.tell(new LaiYangActor.InitiateSnapshot());
 
         // Give some time for snapshot to be taken
-        Thread.sleep(1000); // Consider using a more robust synchronization method in production
+        Thread.sleep(1000);
 
         File snapshotsDir = new File("snapshots");
         File[] files = snapshotsDir.listFiles((dir, name) -> name.startsWith("snapshot_NodeA") && name.endsWith(".json"));
@@ -150,39 +148,38 @@ public class LaiYangActorTest {
 
         assertTrue("The state of NodeA after snapshot should be 20", stateNodeA == 20);
 
-        testKit2.shutdownTestKit();
         Thread.sleep(2000);
     }
 
     @Test
     public void testGraphSnapshotFromDotFile() throws Exception {
         clearSnapshotsDirectory();
-        ActorTestKit testKit3 = ActorTestKit.create();
-        Map<String, ActorRef<LaiYangActor.Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph.dot");
 
-        ActorRef<LaiYangActor.Message> initNode = network.get("0");
+
+        Map<String, ActorRef<Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph.dot");
+
+        ActorRef<Message> initNode = network.get("0");
         initNode.tell(new LaiYangActor.InitiateSnapshot());
 
         initNode.tell(new LaiYangActor.PerformCalculation(10));
 
         Thread.sleep(2000);
-        testKit3.shutdownTestKit();
     }
 
     @Test
     public void testGraphSnapshotFromDotFileTwo() throws Exception {
         clearSnapshotsDirectory();
         Thread.sleep(2000);
-        ActorTestKit testKit4 = ActorTestKit.create();
 
-        Map<String, ActorRef<LaiYangActor.Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph2.dot");
+        Map<String, ActorRef<Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph2.dot");
 
-        ActorRef<LaiYangActor.Message> initNode = network.get("0");
+        ActorRef<Message> initNode = network.get("0");
 
         initNode.tell(new LaiYangActor.PerformCalculation(10));
 
         initNode.tell(new LaiYangActor.InitiateSnapshot());
-        testKit4.shutdownTestKit();
+
+
         Thread.sleep(5000);
     }
 
@@ -190,12 +187,11 @@ public class LaiYangActorTest {
     public void testGraphSnapshotFromDotFileThree() throws Exception {
         clearSnapshotsDirectory();
         Thread.sleep(2000);
-        ActorTestKit testKit5 = ActorTestKit.create();
         // Build the network from the dot file
-        Map<String, ActorRef<LaiYangActor.Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph3.dot");
+        Map<String, ActorRef<Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph3.dot");
 
         // Assuming the initial snapshot trigger is from node "0"
-        ActorRef<LaiYangActor.Message> initNode = network.get("0");
+        ActorRef<Message> initNode = network.get("0");
 
         initNode.tell(new LaiYangActor.PerformCalculation(10));
 
@@ -208,13 +204,12 @@ public class LaiYangActorTest {
     @Test
     public void testGraphSnapshotFromDotFileThreeScenarioTwo() throws Exception {
         clearSnapshotsDirectory();
-        ActorTestKit testKit6 = ActorTestKit.create();
         // Build the network from the dot file
-        Map<String, ActorRef<LaiYangActor.Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph3.dot");
+        Map<String, ActorRef<Message>> network = buildNetworkFromDotFile("src/test/resources/graph/testGraph3.dot");
 
         // Assuming the initial snapshot trigger is from node "0"
-        ActorRef<LaiYangActor.Message> initNode = network.get("0");
-        ActorRef<LaiYangActor.Message> nodeSeven = network.get("7");
+        ActorRef<Message> initNode = network.get("0");
+        ActorRef<Message> nodeSeven = network.get("7");
 
         initNode.tell(new LaiYangActor.PerformCalculation(10));
         nodeSeven.tell(new LaiYangActor.PerformCalculation(2));
@@ -223,14 +218,13 @@ public class LaiYangActorTest {
         nodeSeven.tell(new LaiYangActor.PerformCalculation(3));
 
         // Allow some time for the snapshot process to complete
-        Thread.sleep(2000);
+        Thread.sleep(5000);
 
         File snapshotDir = new File("snapshots");
         File[] snapshotFiles = snapshotDir.listFiles((dir, name) -> name.startsWith("snapshot_7") && name.endsWith(".json"));
         assertTrue("Snapshot file for Node 7 should exist", snapshotFiles != null && snapshotFiles.length > 0);
 
 
-        testKit6.shutdownTestKit();
         Thread.sleep(2000);
     }
 

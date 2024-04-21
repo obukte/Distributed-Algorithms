@@ -3,6 +3,7 @@ package snapshot_algorithms.chandy_lamport;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.*;
+import snapshot_algorithms.Message;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,9 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Message> {
-
-    public interface Message {}
+public class ChandyLamportActor extends AbstractBehavior<Message> {
 
     public static final class InitiateSnapshot implements Message {}
 
@@ -35,6 +34,7 @@ public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Mess
             this.from = from;
         }
     }
+
     public static final class AddNeighbor implements Message {
         public final ActorRef<Message> neighbor;
 
@@ -164,7 +164,7 @@ public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Mess
 
         getContext().getLog().info("{} added as neighbor added to {}", message.neighbor.path().name(), getContext().getSelf().path().name());
 
-        return this; // Return the current behavior
+        return this;
     }
 
     private Behavior<Message> terminate() {
@@ -208,7 +208,7 @@ public class ChandyLamportActor extends AbstractBehavior<ChandyLamportActor.Mess
                         if (message instanceof BasicMessage) {
                             return ((BasicMessage) message).value;
                         }
-                        return null; // Or appropriate value/error handling for different message types
+                        return null;
                     })
                     .filter(Objects::nonNull) // Filter out any null values
                     .collect(Collectors.toList());

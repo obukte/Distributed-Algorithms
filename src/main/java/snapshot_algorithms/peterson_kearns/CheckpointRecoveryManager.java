@@ -22,6 +22,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import snapshot_algorithms.Message;
 import util.GraphParser;
 
 public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecoveryManager.Command> {
@@ -50,9 +51,9 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
 
     public static final class GetActorRef implements Command {
         public final String actorId;
-        public final ActorRef<ActorRef<PetersonKearnsActor.Message>> replyTo;
+        public final ActorRef<ActorRef<Message>> replyTo;
 
-        public GetActorRef(String actorId, ActorRef<ActorRef<PetersonKearnsActor.Message>> replyTo) {
+        public GetActorRef(String actorId, ActorRef<ActorRef<Message>> replyTo) {
             this.actorId = actorId;
             this.replyTo = replyTo;
         }
@@ -83,7 +84,7 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
     public static class InitiateNetworkSnapshot implements Command {}
 
     private Map<String, Set<String>> nodeNeighbors;
-    private Map<String, ActorRef<PetersonKearnsActor.Message>> nodes;
+    private Map<String, ActorRef<Message>> nodes;
 
     private CheckpointRecoveryManager(ActorContext<Command> context) {
         super(context);
@@ -109,7 +110,7 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
 
     // Handling GetActorRef inside createReceive method
     private Behavior<Command> onGetActorRef(GetActorRef command) {
-        ActorRef<PetersonKearnsActor.Message> actorRef = nodes.get(command.actorId); // Assuming actorMap holds the references
+        ActorRef<Message> actorRef = nodes.get(command.actorId); // Assuming actorMap holds the references
         command.replyTo.tell(actorRef);
         return this;
     }
@@ -123,8 +124,8 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
         });
 
         edges.forEach(edge -> {
-            ActorRef<PetersonKearnsActor.Message> sourceNode = nodes.get(edge.getSource());
-            ActorRef<PetersonKearnsActor.Message> destinationNode = nodes.get(edge.getDestination());
+            ActorRef<Message> sourceNode = nodes.get(edge.getSource());
+            ActorRef<Message> destinationNode = nodes.get(edge.getDestination());
             sourceNode.tell(new PetersonKearnsActor.AddNeighbor(destinationNode));
             getContext().watch(sourceNode);
             getContext().watch(destinationNode);
@@ -138,7 +139,7 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
     }
 
     private Behavior<Command> onTerminateActorCommand(TerminateActor command) {
-        ActorRef<PetersonKearnsActor.Message> actorToTerminate = nodes.get(command.actorId);
+        ActorRef<Message> actorToTerminate = nodes.get(command.actorId);
         if (actorToTerminate != null) {
             actorToTerminate.tell(new PetersonKearnsActor.TerminateActor());
             getContext().getLog().info("Sent termination request to actor with ID {}", command.actorId);
@@ -177,10 +178,10 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
             SnapshotData data = parseSnapshotData(snapshotData);
 
             // Determine the neighbors of the actor from the snapshot
-            Set<ActorRef<PetersonKearnsActor.Message>> neighbors = determineNeighbors(actorId);
+            Set<ActorRef<Message>> neighbors = determineNeighbors(actorId);
 
             // Create a new actor instance with the recovered state and vector clock
-            ActorRef<PetersonKearnsActor.Message> newActor = getContext().spawn(
+            ActorRef<Message> newActor = getContext().spawn(
                     PetersonKearnsActor.create(neighbors, data.getPersonalState()),
                     actorId + "_recovered"
             );
@@ -215,7 +216,7 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
 
                         // Only trigger recovery if the message vector clock indicates a need for update
                         if (shouldReplay(msgVectorClock, recoveryVC)) {
-                            ActorRef<PetersonKearnsActor.Message> neighbor = nodes.get(toId);
+                            ActorRef<Message> neighbor = nodes.get(toId);
                             if (neighbor == null) { // Check if the neighbor exists in the nodes map
                                 getContext().getLog().info("Neighbor {} not active. Triggering recovery.", toId);
                                 recoverActorFromSnapshot(toId);
@@ -309,12 +310,12 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
         }
     }
 
-    private Set<ActorRef<PetersonKearnsActor.Message>> determineNeighbors(String actorId) {
+    private Set<ActorRef<Message>> determineNeighbors(String actorId) {
         Set<String> neighborIds = nodeNeighbors.getOrDefault(actorId, new HashSet<>());
-        Set<ActorRef<PetersonKearnsActor.Message>> neighborRefs = new HashSet<>();
+        Set<ActorRef<Message>> neighborRefs = new HashSet<>();
 
         neighborIds.forEach(id -> {
-            ActorRef<PetersonKearnsActor.Message> neighborRef = nodes.get(id);
+            ActorRef<Message> neighborRef = nodes.get(id);
             if (neighborRef != null) {
                 neighborRefs.add(neighborRef);
             }
@@ -353,7 +354,7 @@ public class CheckpointRecoveryManager extends AbstractBehavior<CheckpointRecove
                     Map<String, Integer> messageVectorClock = parseVectorClock(matcher.group(4));
 
                     if (shouldReplay(messageVectorClock, recoveryVC)) {
-                        ActorRef<PetersonKearnsActor.Message> toActor = nodes.get(toId);
+                        ActorRef<Message> toActor = nodes.get(toId);
                         if (toActor != null) {
                             // Create and send a BasicMessage
                             PetersonKearnsActor.BasicMessage message = new PetersonKearnsActor.BasicMessage(value, nodes.get(fromId), messageVectorClock);

@@ -3,6 +3,7 @@ package snapshot_algorithms.peterson_kearns;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.*;
+import snapshot_algorithms.Message;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,9 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PetersonKearnsActor extends AbstractBehavior<PetersonKearnsActor.Message> {
-
-    public interface Message {}
+public class PetersonKearnsActor extends AbstractBehavior<Message> {
 
     public static final class InitiateSnapshot implements Message {}
 
