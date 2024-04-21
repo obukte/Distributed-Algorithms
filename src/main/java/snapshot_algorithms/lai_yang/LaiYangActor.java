@@ -3,6 +3,7 @@ package snapshot_algorithms.lai_yang;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.*;
+import snapshot_algorithms.Message;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,9 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
-
-    public interface Message {}
+public class LaiYangActor extends AbstractBehavior<Message> {
 
     public static final class PerformCalculation implements Message {
         public final int value;
@@ -271,14 +270,11 @@ public class LaiYangActor extends AbstractBehavior<LaiYangActor.Message> {
             snapshotTimestamp = LocalDateTime.now();
         }
         String formattedTimestamp = snapshotTimestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-
         // Prepare the content of the snapshot
         String snapshotContent = prepareSnapshotContent(formattedTimestamp);
-
         // Save the snapshot to a file
         saveSnapshotToFile(snapshotContent, formattedTimestamp);
 
-        // Optional: Log that the snapshot process has concluded for this actor
         getContext().getLog().info("Snapshot process completed for {}.", getContext().getSelf().path().name());
     }
 

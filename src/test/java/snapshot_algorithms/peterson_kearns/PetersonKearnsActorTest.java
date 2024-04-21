@@ -6,6 +6,7 @@ import akka.actor.typed.ActorRef;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import snapshot_algorithms.Message;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,8 +29,8 @@ public class PetersonKearnsActorTest {
 
     @Test
     public void testMessageHandlingAndStateUpdate() {
-        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
-        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+        TestProbe<Message> probe = testKit.createTestProbe();
+        ActorRef<Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
 
         actor.tell(new PetersonKearnsActor.BasicMessage(10, probe.ref(), new HashMap<>()));
     }
@@ -37,16 +38,16 @@ public class PetersonKearnsActorTest {
 
     @Test
     public void testSnapshotTakingAndRecovery() {
-        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
-        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+        TestProbe<Message> probe = testKit.createTestProbe();
+        ActorRef<Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
 
         actor.tell(new PetersonKearnsActor.InitiateSnapshot());
     }
 
     @Test
     public void testMessageVectorClockLogging() {
-        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
-        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+        TestProbe<Message> probe = testKit.createTestProbe();
+        ActorRef<Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
 
         Map<String, Integer> vectorClock = new HashMap<>();
         vectorClock.put("someActor", 1);
@@ -55,8 +56,8 @@ public class PetersonKearnsActorTest {
 
     @Test
     public void testActorTerminationEffects() {
-        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
-        ActorRef<PetersonKearnsActor.Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
+        TestProbe<Message> probe = testKit.createTestProbe();
+        ActorRef<Message> actor = testKit.spawn(PetersonKearnsActor.create(new HashSet<>(), 0));
 
         actor.tell(new PetersonKearnsActor.TerminateActor());
     }

@@ -6,6 +6,7 @@ import akka.actor.typed.ActorRef;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import snapshot_algorithms.Message;
 import snapshot_algorithms.chandy_lamport.ChandyLamportActor;
 import util.GraphParser;
 
@@ -34,10 +35,10 @@ public class ChandyLamportActorTest {
         testKit.shutdownTestKit();
     }
 
-    public Map<String, ActorRef<LaiYangActor.Message>> buildNetworkFromDotFile(String dotFilePath) throws Exception {
+    public Map<String, ActorRef<Message>> buildNetworkFromDotFile(String dotFilePath) throws Exception {
         List<GraphParser.Edge> edges = GraphParser.parseDotFile(dotFilePath);
 
-        Map<String, ActorRef<LaiYangActor.Message>> nodes = new HashMap<>();
+        Map<String, ActorRef<Message>> nodes = new HashMap<>();
 
         edges.forEach(edge -> {
             nodes.computeIfAbsent(edge.getSource(), sourceId -> testKit.spawn(LaiYangActor.create(new HashSet<>()), sourceId));
@@ -45,8 +46,8 @@ public class ChandyLamportActorTest {
         });
 
         edges.forEach(edge -> {
-            ActorRef<LaiYangActor.Message> sourceNode = nodes.get(edge.getSource());
-            ActorRef<LaiYangActor.Message> destinationNode = nodes.get(edge.getDestination());
+            ActorRef<Message> sourceNode = nodes.get(edge.getSource());
+            ActorRef<Message> destinationNode = nodes.get(edge.getDestination());
             sourceNode.tell(new LaiYangActor.AddNeighbor(destinationNode));
         });
 
@@ -86,8 +87,8 @@ public class ChandyLamportActorTest {
         ActorTestKit testKit = ActorTestKit.create();
 
         // Spawn nodes with empty neighbor sets initially
-        ActorRef<ChandyLamportActor.Message> nodeA = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeA");
-        ActorRef<ChandyLamportActor.Message> nodeB = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeB");
+        ActorRef<Message> nodeA = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeA");
+        ActorRef<Message> nodeB = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeB");
 
         // Dynamically add each other as neighbors
         nodeA.tell(new ChandyLamportActor.AddNeighbor(nodeB));
@@ -119,12 +120,12 @@ public class ChandyLamportActorTest {
         ActorTestKit testKit = ActorTestKit.create();
 
         // Spawn nodes
-        ActorRef<ChandyLamportActor.Message> nodeA = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeA");
-        ActorRef<ChandyLamportActor.Message> nodeB = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeB");
-        ActorRef<ChandyLamportActor.Message> nodeC = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeC");
-        ActorRef<ChandyLamportActor.Message> nodeD = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeD");
-        ActorRef<ChandyLamportActor.Message> nodeE = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeE");
-        ActorRef<ChandyLamportActor.Message> nodeF = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeF");
+        ActorRef<Message> nodeA = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeA");
+        ActorRef<Message> nodeB = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeB");
+        ActorRef<Message> nodeC = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeC");
+        ActorRef<Message> nodeD = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeD");
+        ActorRef<Message> nodeE = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeE");
+        ActorRef<Message> nodeF = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeF");
 
         // Establish neighbor relationships
         nodeA.tell(new ChandyLamportActor.AddNeighbor(nodeB));
@@ -172,12 +173,12 @@ public class ChandyLamportActorTest {
         ActorTestKit testKit = ActorTestKit.create();
 
         // Spawn nodes
-        ActorRef<ChandyLamportActor.Message> nodeA = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeA");
-        ActorRef<ChandyLamportActor.Message> nodeB = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeB");
-        ActorRef<ChandyLamportActor.Message> nodeC = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeC");
-        ActorRef<ChandyLamportActor.Message> nodeD = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeD");
-        ActorRef<ChandyLamportActor.Message> nodeE = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeE");
-        ActorRef<ChandyLamportActor.Message> nodeF = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeF");
+        ActorRef<Message> nodeA = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeA");
+        ActorRef<Message> nodeB = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeB");
+        ActorRef<Message> nodeC = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeC");
+        ActorRef<Message> nodeD = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeD");
+        ActorRef<Message> nodeE = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeE");
+        ActorRef<Message> nodeF = testKit.spawn(ChandyLamportActor.create(new HashSet<>()), "NodeF");
 
         // Establish neighbor relationships
         nodeA.tell(new ChandyLamportActor.AddNeighbor(nodeB));

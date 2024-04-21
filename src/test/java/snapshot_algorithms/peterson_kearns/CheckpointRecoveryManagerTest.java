@@ -8,6 +8,7 @@ import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.AskPattern;
 import org.junit.ClassRule;
 import org.junit.Test;
+import snapshot_algorithms.Message;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,7 @@ public class CheckpointRecoveryManagerTest {
 
     @Test
     public void testBuildNetworkFromDotFile() throws InterruptedException {
-        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
+        TestProbe<Message> probe = testKit.createTestProbe();
         ActorRef<CheckpointRecoveryManager.Command> checkpointManager = testKit.spawn(CheckpointRecoveryManager.create());
 
         checkpointManager.tell(new CheckpointRecoveryManager.BuildNetworkFromDotFile("src/test/resources/graph/testGraph.dot"));
@@ -61,7 +62,7 @@ public class CheckpointRecoveryManagerTest {
     @Test
     public void testNetworkRecovery() {
         ActorTestKit testKit = ActorTestKit.create();
-        TestProbe<PetersonKearnsActor.Message> probe = testKit.createTestProbe();
+        TestProbe<Message> probe = testKit.createTestProbe();
 
         // Spawn the checkpoint manager
         ActorRef<CheckpointRecoveryManager.Command> checkpointManager = testKit.spawn(CheckpointRecoveryManager.create());
@@ -89,22 +90,22 @@ public class CheckpointRecoveryManagerTest {
         Thread.sleep(1000);
 
         // Fetch actors from the checkpoint manager
-        CompletionStage<ActorRef<PetersonKearnsActor.Message>> actor0Future = AskPattern.ask(
+        CompletionStage<ActorRef<Message>> actor0Future = AskPattern.ask(
                 system,
                 replyTo -> new CheckpointRecoveryManager.GetActorRef("0", replyTo),
                 Duration.ofSeconds(3),
                 system.scheduler()
         );
 
-        CompletionStage<ActorRef<PetersonKearnsActor.Message>> actor1Future = AskPattern.ask(
+        CompletionStage<ActorRef<Message>> actor1Future = AskPattern.ask(
                 system,
                 replyTo -> new CheckpointRecoveryManager.GetActorRef("1", replyTo),
                 Duration.ofSeconds(3),
                 system.scheduler()
         );
 
-        ActorRef<PetersonKearnsActor.Message> actor0 = actor0Future.toCompletableFuture().get();
-        ActorRef<PetersonKearnsActor.Message> actor1 = actor1Future.toCompletableFuture().get();
+        ActorRef<Message> actor0 = actor0Future.toCompletableFuture().get();
+        ActorRef<Message> actor1 = actor1Future.toCompletableFuture().get();
 
         // Ensure actors are not null
         assertEquals(true, actor0 != null);
@@ -143,22 +144,22 @@ public class CheckpointRecoveryManagerTest {
         Thread.sleep(1000);
 
         // Fetch actors from the checkpoint manager
-        CompletionStage<ActorRef<PetersonKearnsActor.Message>> actor0Future = AskPattern.ask(
+        CompletionStage<ActorRef<Message>> actor0Future = AskPattern.ask(
                 system,
                 replyTo -> new CheckpointRecoveryManager.GetActorRef("0", replyTo),
                 Duration.ofSeconds(3),
                 system.scheduler()
         );
 
-        CompletionStage<ActorRef<PetersonKearnsActor.Message>> actor1Future = AskPattern.ask(
+        CompletionStage<ActorRef<Message>> actor1Future = AskPattern.ask(
                 system,
                 replyTo -> new CheckpointRecoveryManager.GetActorRef("1", replyTo),
                 Duration.ofSeconds(3),
                 system.scheduler()
         );
 
-        ActorRef<PetersonKearnsActor.Message> actor0 = actor0Future.toCompletableFuture().get();
-        ActorRef<PetersonKearnsActor.Message> actor1 = actor1Future.toCompletableFuture().get();
+        ActorRef<Message> actor0 = actor0Future.toCompletableFuture().get();
+        ActorRef<Message> actor1 = actor1Future.toCompletableFuture().get();
 
         // Ensure actors are not null
         assertEquals(true, actor0 != null);
