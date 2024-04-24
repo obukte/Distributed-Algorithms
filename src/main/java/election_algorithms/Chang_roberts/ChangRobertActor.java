@@ -1,4 +1,4 @@
-package election_algorithms;
+package election_algorithms.Chang_roberts;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
