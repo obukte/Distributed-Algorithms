@@ -3,17 +3,14 @@ package snapshot_algorithms;
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
-import akka.actor.typed.PostStop;
 import akka.actor.typed.javadsl.AskPattern;
-import akka.actor.typed.javadsl.Behaviors;
-import com.typesafe.config.Config;
 import snapshot_algorithms.chandy_lamport.ChandyLamportActor;
 import snapshot_algorithms.lai_yang.LaiYangActor;
 import snapshot_algorithms.peterson_kearns.CheckpointRecoveryManager;
 import snapshot_algorithms.peterson_kearns.PetersonKearnsActor;
 import util.GraphParser;
 
-import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
@@ -51,6 +48,8 @@ public class Main {
                         System.out.println("Invalid option. Please enter 1, 2, 3, or 4.");
                 }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             scanner.close(); // Ensure the scanner is closed to free resources
         }
@@ -125,7 +124,7 @@ public class Main {
     }
 
 
-    public static void runPetersonKearns() throws InterruptedException, ExecutionException {
+    public static void runPetersonKearns() throws InterruptedException, ExecutionException, IOException {
         // Create the actor system and the checkpoint manager actor
         ActorSystem<CheckpointRecoveryManager.Command> system = ActorSystem.create(CheckpointRecoveryManager.create(), "System");
 

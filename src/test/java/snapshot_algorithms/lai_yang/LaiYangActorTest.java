@@ -1,7 +1,6 @@
 package snapshot_algorithms.lai_yang;
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
-import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -12,11 +11,11 @@ import util.GraphParser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static util.GraphParser.clearSnapshotsDirectory;
 
 public class LaiYangActorTest {
 
@@ -68,20 +67,6 @@ public class LaiYangActorTest {
         String stateStr = content.substring(startIndex, endIndex).trim();
 
         return Integer.parseInt(stateStr);
-    }
-
-    private static void clearSnapshotsDirectory() throws IOException {
-        Path snapshotsDir = Paths.get("snapshots");
-        if (Files.exists(snapshotsDir)) {
-            Files.walk(snapshotsDir)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-
-            Files.createDirectories(snapshotsDir);
-        } else {
-            Files.createDirectories(snapshotsDir);
-        }
     }
 
     @Test
