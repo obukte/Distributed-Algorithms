@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 public class Main {
 
     private static final String TEST_FILE_PATH = "src/main/resources/graph/NetGraph_17-03-24-12-50-04.ngs.dot";
-    static ActorTestKit testKit = ActorTestKit.create();
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         Scanner scanner = new Scanner(System.in);
@@ -58,6 +57,7 @@ public class Main {
     }
 
     private static void runLaiYang() throws InterruptedException {
+        ActorTestKit testKit = ActorTestKit.create();
         List<GraphParser.Edge> edges = GraphParser.parseDotFile(TEST_FILE_PATH);
 
         Map<String, ActorRef<Message>> network = new HashMap<>();
@@ -79,24 +79,29 @@ public class Main {
 
         initNode.tell(new LaiYangActor.PerformCalculation(10));
         nodeSeven.tell(new LaiYangActor.PerformCalculation(2));
+        Thread.sleep(2000);
 
         initNode.tell(new LaiYangActor.InitiateSnapshot());
+        Thread.sleep(1000);
         nodeSeven.tell(new LaiYangActor.PerformCalculation(3));
 
         // Allow some time for the snapshot process to complete
-        Thread.sleep(10000);
+        Thread.sleep(5000);
 
+        testKit.shutdownTestKit();
         System.out.println("Lai-yang simulation ended...");
+        System.out.println("Snapshot are saved under the /snapshot directory.");
     }
 
     private static void runChandyLamport() throws InterruptedException {
+        ActorTestKit testKitChandyLamport = ActorTestKit.create();
         List<GraphParser.Edge> edges = GraphParser.parseDotFile(TEST_FILE_PATH);
 
         Map<String, ActorRef<Message>> network = new HashMap<>();
 
         edges.forEach(edge -> {
-            network.computeIfAbsent(edge.getSource(), sourceId -> testKit.spawn(ChandyLamportActor.create(new HashSet<>()), sourceId));
-            network.computeIfAbsent(edge.getDestination(), destId -> testKit.spawn(ChandyLamportActor.create(new HashSet<>()), destId));
+            network.computeIfAbsent(edge.getSource(), sourceId -> testKitChandyLamport.spawn(ChandyLamportActor.create(new HashSet<>()), sourceId));
+            network.computeIfAbsent(edge.getDestination(), destId -> testKitChandyLamport.spawn(ChandyLamportActor.create(new HashSet<>()), destId));
         });
 
         edges.forEach(edge -> {
@@ -105,15 +110,18 @@ public class Main {
             sourceNode.tell(new ChandyLamportActor.AddNeighbor(destinationNode));
         });
 
+        Thread.sleep(2000);
+
         // Assuming the initial snapshot trigger is from node "0"
         ActorRef<Message> initNode = network.get("0");
 
         initNode.tell(new ChandyLamportActor.InitiateSnapshot());
 
         // Allow some time for the snapshot process to complete
-        Thread.sleep(10000);
-
+        Thread.sleep(5000);
+        testKitChandyLamport.shutdownTestKit();
         System.out.println("Chandy-Lamport simulation ended...");
+        System.out.println("Snapshot are saved under the /snapshot directory.");
     }
 
 
@@ -161,6 +169,7 @@ public class Main {
         Thread.sleep(2000);
 
         System.out.println("Peterson-kearns simulation ended...");
+        System.out.println("Snapshots and message logs are saved under the /snapshot directory.");
 
         system.terminate();
     }
