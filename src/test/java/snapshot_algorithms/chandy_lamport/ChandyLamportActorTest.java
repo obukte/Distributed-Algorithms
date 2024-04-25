@@ -1,23 +1,20 @@
-package snapshot_algorithms.lai_yang;
+package snapshot_algorithms.chandy_lamport;
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
-import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import snapshot_algorithms.Message;
-import snapshot_algorithms.chandy_lamport.ChandyLamportActor;
 import util.GraphParser;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static util.GraphParser.clearSnapshotsDirectory;
 
 public class ChandyLamportActorTest {
 
@@ -41,14 +38,14 @@ public class ChandyLamportActorTest {
         Map<String, ActorRef<Message>> nodes = new HashMap<>();
 
         edges.forEach(edge -> {
-            nodes.computeIfAbsent(edge.getSource(), sourceId -> testKit.spawn(LaiYangActor.create(new HashSet<>()), sourceId));
-            nodes.computeIfAbsent(edge.getDestination(), destId -> testKit.spawn(LaiYangActor.create(new HashSet<>()), destId));
+            nodes.computeIfAbsent(edge.getSource(), sourceId -> testKit.spawn(ChandyLamportActor.create(new HashSet<>()), sourceId));
+            nodes.computeIfAbsent(edge.getDestination(), destId -> testKit.spawn(ChandyLamportActor.create(new HashSet<>()), destId));
         });
 
         edges.forEach(edge -> {
             ActorRef<Message> sourceNode = nodes.get(edge.getSource());
             ActorRef<Message> destinationNode = nodes.get(edge.getDestination());
-            sourceNode.tell(new LaiYangActor.AddNeighbor(destinationNode));
+            sourceNode.tell(new ChandyLamportActor.AddNeighbor(destinationNode));
         });
 
         return nodes;
@@ -66,20 +63,6 @@ public class ChandyLamportActorTest {
         String stateStr = content.substring(startIndex, endIndex).trim();
 
         return Integer.parseInt(stateStr);
-    }
-
-    private static void clearSnapshotsDirectory() throws IOException {
-        Path snapshotsDir = Paths.get("snapshots");
-        if (Files.exists(snapshotsDir)) {
-            Files.walk(snapshotsDir)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-
-            Files.createDirectories(snapshotsDir);
-        } else {
-            Files.createDirectories(snapshotsDir);
-        }
     }
 
     @Test

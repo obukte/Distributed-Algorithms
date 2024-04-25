@@ -2,9 +2,14 @@ package util;
 
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class GraphParser {
@@ -72,6 +77,20 @@ public class GraphParser {
         } catch (Exception e){
             System.err.println("Error parsing weight from line: " + line);
             return -1;
+        }
+    }
+
+    public static void clearSnapshotsDirectory() throws IOException {
+        Path snapshotsDir = Paths.get("snapshots");
+        if (Files.exists(snapshotsDir)) {
+            Files.walk(snapshotsDir)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+
+            Files.createDirectories(snapshotsDir);
+        } else {
+            Files.createDirectories(snapshotsDir);
         }
     }
 
