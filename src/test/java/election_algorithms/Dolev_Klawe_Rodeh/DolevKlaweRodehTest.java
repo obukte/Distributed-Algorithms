@@ -1,48 +1,62 @@
 package election_algorithms.Dolev_Klawe_Rodeh;
 
-import akka.actor.typed.ActorSystem;
-
+import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
+import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
-import akka.actor.typed.Behavior;
-import akka.actor.typed.javadsl.Behaviors;
-import election_algorithms.DolevklaweRodehAglorithm.DolevKlaweRodehActor;
-
+import org.junit.ClassRule;
+import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import election_algorithms.DolevklaweRodehAglorithm.DolevKlaweRodehActor;
+import election_algorithms.DolevklaweRodehAglorithm.DolevKlaweRodehActor.ElectionMessage;
+import election_algorithms.DolevklaweRodehAglorithm.DolevKlaweRodehActor.InitializeRing;
+import election_algorithms.DolevklaweRodehAglorithm.DolevKlaweRodehActor.StartElection;
 
 public class DolevKlaweRodehTest {
-    public static void main(String[] args) {
-        // Define the number of actors in the ring
-        final int numberOfActors = 5;
-        Map<Integer, ActorRef<DolevKlaweRodehActor.Message>> actors = new HashMap<>();
 
-        // Create the actor system and actors
-        ActorSystem<DolevKlaweRodehActor.Message> actorSystem = ActorSystem.create(createMainBehavior(numberOfActors, actors), "DolevKlaweRodehActorSystem");
-    }
+    @ClassRule
+    public static final TestKitJunitResource testKit = new TestKitJunitResource();
 
-    // Create a main behavior to initialize and manage the ring of actors
-    private static Behavior<DolevKlaweRodehActor.Message> createMainBehavior(final int numberOfActors, final Map<Integer, ActorRef<DolevKlaweRodehActor.Message>> actors) {
-        return Behaviors.setup(context -> {
-            // Create actors with unique IDs and add them to the map
-            for (int i = 0; i < numberOfActors; i++) {
-                ActorRef<DolevKlaweRodehActor.Message> actorRef = context.spawn(DolevKlaweRodehActor.create(i), "actor" + i);
-                actors.put(i, actorRef);
-            }
+    @Test
+    public void testElectionProcess() {
+        TestProbe<DolevKlaweRodehActor.Message> neighbor1 = testKit.createTestProbe();
+        TestProbe<DolevKlaweRodehActor.Message> neighbor2 = testKit.createTestProbe();
 
-            // Initialize the ring for each actor
-            actors.forEach((id, ref) -> {
-                int nextId = (id + 1) % numberOfActors; // Circular ring
-                Map<Integer, ActorRef<DolevKlaweRodehActor.Message>> initMap = new HashMap<>();
-                initMap.put(id, actors.get(nextId)); // Set the next actor
-                ref.tell(new DolevKlaweRodehActor.InitializeRing(initMap));
-            });
+        ActorRef<DolevKlaweRodehActor.Message> actor1 = testKit.spawn(DolevKlaweRodehActor.create(1));
+        System.out.println("Test started: Actor 1 spawned");
 
-            // Start the election by sending an ElectionMessage from the first actor
-            ActorRef<DolevKlaweRodehActor.Message> firstActor = actors.get(0);
-            if (firstActor != null) {
-                firstActor.tell(new DolevKlaweRodehActor.ElectionMessage(0, 0, false));
-            }
-            return Behaviors.empty();
-        });
+        Map<Boolean, ActorRef<DolevKlaweRodehActor.Message>> neighbors = new HashMap<>();
+        neighbors.put(true, neighbor1.ref());
+        neighbors.put(false, neighbor2.ref());
+
+        actor1.tell(new InitializeRing(neighbors));
+        System.out.println("InitializeRing message sent");
+
+        actor1.tell(new StartElection());
+        System.out.println("StartElection message sent");
+
+        ElectionMessage message1 = (ElectionMessage) neighbor1.receiveMessage();
+        ElectionMessage message2 = (ElectionMessage) neighbor2.receiveMessage();
+
+        assertEquals(1, message1.electionId);
+        assertEquals(actor1, message1.sender);
+        System.out.println("Initial messages received and verified");
+
+        actor1.tell(new ElectionMessage(2, neighbor1.ref(), !message1.parity));
+        System.out.println("Higher election ID message sent");
+
+        ElectionMessage forwardedMessage = (ElectionMessage) neighbor2.receiveMessage();
+        assertEquals(2, forwardedMessage.electionId);
+        assertEquals(!message1.parity, forwardedMessage.parity);
+        System.out.println("Forwarded message received and verified");
+
+        actor1.tell(new ElectionMessage(forwardedMessage.electionId, actor1, forwardedMessage.parity));
+        ElectionMessage leaderAck = (ElectionMessage) neighbor1.receiveMessage();
+        assertEquals(forwardedMessage.electionId, leaderAck.electionId);
+        System.out.println("Leader message acknowledged");
+
+        testKit.stop(actor1);
+        System.out.println("Actor system stopped");
     }
 }
