@@ -11,5 +11,3 @@ edge ["class"="link-class"]
 "8" -- "9" ["weight"="1.8"]
 "9" -- "0" ["weight"="1.9"] // Completing the ring
 }
-
-

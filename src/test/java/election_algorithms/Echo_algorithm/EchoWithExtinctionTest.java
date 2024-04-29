@@ -14,9 +14,7 @@ import java.util.List;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import election_algorithms.echo_algorithm.EchoWithExtinctionActor;
 import static org.junit.Assert.assertEquals;
-import java.util.UUID;
 
 
 public class EchoWithExtinctionTest {

@@ -11,6 +11,8 @@ import util.GraphParser;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+
 
 public class ChangRobertsActorTest {
 
@@ -79,4 +81,80 @@ public class ChangRobertsActorTest {
         }
 
     }
+
+
+    @Test
+    public void testSimpleTwoNodeElection() {
+        String filePath = "target/test-classes/graph/Electiongraph0.dot";
+        List<GraphParser.Edge> edges = GraphParser.parseDotFile(filePath);
+
+        Map<Integer, ActorRef<ChangRobertActor.Message>> actors = new HashMap<>();
+
+        // Create actors for the two nodes defined in the simple graph
+        edges.forEach(edge -> {
+            try {
+                int sourceId = Integer.parseInt(edge.getSource());
+                int destId = Integer.parseInt(edge.getDestination());
+                actors.computeIfAbsent(sourceId, id -> testKit.spawn(ChangRobertActor.create(id), "actor" + id));
+                actors.computeIfAbsent(destId, id -> testKit.spawn(ChangRobertActor.create(id), "actor" + id));
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing node ID: " + e.getMessage());
+            }
+        });
+
+        // Set each node's next actor to simulate a two-node ring
+        if (actors.size() == 2) {
+            List<Integer> nodeIds = new ArrayList<>(actors.keySet());
+            Integer firstNodeId = nodeIds.get(0);
+            Integer secondNodeId = nodeIds.get(1);
+            actors.get(firstNodeId).tell(new ChangRobertActor.SetNextActor(actors.get(secondNodeId)));
+            actors.get(secondNodeId).tell(new ChangRobertActor.SetNextActor(actors.get(firstNodeId)));
+            System.out.println("Two-node ring setup complete between " + firstNodeId + " and " + secondNodeId);
+
+            // Start the election from the first node
+            System.out.println("Actor " + firstNodeId + " initiates the election");
+            actors.get(firstNodeId).tell(new ChangRobertActor.StartElection(firstNodeId));
+        } else {
+            System.err.println("Test setup error: Incorrect number of actors created.");
+        }
+
+        // Wait to observe the election process
+        try {
+            Thread.sleep(3000); // Delay to allow the election message to circulate between the two nodes
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testDirectThreeNodeElection() {
+        ActorTestKit testKit = ActorTestKit.create();
+        try {
+            // Manually create three actors
+            ActorRef<ChangRobertActor.Message> actor1 = testKit.spawn(ChangRobertActor.create(1), "actor1");
+            ActorRef<ChangRobertActor.Message> actor2 = testKit.spawn(ChangRobertActor.create(2), "actor2");
+            ActorRef<ChangRobertActor.Message> actor3 = testKit.spawn(ChangRobertActor.create(3), "actor3");
+
+            // Manually set up a ring topology among actors
+            actor1.tell(new ChangRobertActor.SetNextActor(actor2));
+            actor2.tell(new ChangRobertActor.SetNextActor(actor3));
+            actor3.tell(new ChangRobertActor.SetNextActor(actor1));
+
+            // Start the election from the first node
+            System.out.println("Actor 1 initiates the election");
+            actor1.tell(new ChangRobertActor.StartElection(1));
+
+            // Wait to observe the election process
+            try {
+                Thread.sleep(5000); // Delay to allow the election message to circulate among the three nodes
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
+        } finally {
+            testKit.shutdownTestKit();
+        }
+    }
+
 }

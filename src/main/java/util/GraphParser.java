@@ -95,7 +95,7 @@ public class GraphParser {
     }
 
     public static void main(String[] args) {
-        String filePath = "target/test-classes/graph/Electiongraph5.dot";
+        String filePath = "target/test-classes/graph/Electiongraph2.dot";
         List<Edge> edges = parseDotFile(filePath);
         edges.forEach(System.out::println);
     }

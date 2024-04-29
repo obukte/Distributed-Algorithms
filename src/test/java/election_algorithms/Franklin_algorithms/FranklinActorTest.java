@@ -1,4 +1,4 @@
-package election_algorithms.Franklins_algorithm;
+package election_algorithms.Franklin_algorithms;
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
 import akka.actor.testkit.typed.javadsl.TestProbe;
@@ -7,6 +7,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.List;
 import util.GraphParser;
@@ -67,7 +68,7 @@ public class FranklinActorTest {
         ActorRef<FranklinActor.Message> highestIdActor = actors.get(String.valueOf(highestId));
 
         // Start the election from the highest ID node
-        highestIdActor.tell(new FranklinActor.ElectionMessage(highestId, 0));
+        highestIdActor.tell(new FranklinActor.ElectionMessage(highestId, 0, "right"));
         System.out.println("Node " + highestId + " started ElectionMessage");
 
         TestProbe<FranklinActor.LeaderElected> probe = testKit.createTestProbe();
@@ -81,4 +82,35 @@ public class FranklinActorTest {
             throw e;
         }
     }
+
+
+    @Test
+    public void testElectionProcess() {
+        TestProbe<FranklinActor.Message> leftProbe = testKit.createTestProbe();
+        TestProbe<FranklinActor.Message> rightProbe = testKit.createTestProbe();
+
+        ActorRef<FranklinActor.Message> franklinActor = testKit.spawn(FranklinActor.create(1));
+
+        // Initialize neighbors
+        franklinActor.tell(new FranklinActor.InitializeNeighbors(leftProbe.getRef(), rightProbe.getRef()));
+
+        // Expect initialization and send election messages
+        FranklinActor.ElectionMessage leftMessage = leftProbe.expectMessageClass(FranklinActor.ElectionMessage.class);
+        assertEquals("The left neighbor should receive the correct ID and round", 1, leftMessage.id);
+        assertEquals("The round should match", 0, leftMessage.round);
+        assertEquals("Direction should be 'left'", "left", leftMessage.direction);
+
+        FranklinActor.ElectionMessage rightMessage = rightProbe.expectMessageClass(FranklinActor.ElectionMessage.class);
+        assertEquals("The right neighbor should receive the correct ID and round", 1, rightMessage.id);
+        assertEquals("The round should match", 0, rightMessage.round);
+        assertEquals("Direction should be 'right'", "right", rightMessage.direction);
+
+        // Simulate further election process with correct parameters
+        franklinActor.tell(new FranklinActor.ElectionMessage(2, 0, "right"));
+
+        // Check if the leader election message is received correctly
+        FranklinActor.LeaderElected leaderMessage = rightProbe.expectMessageClass(FranklinActor.LeaderElected.class);
+        assertEquals("The leader should be recognized with the correct ID", 2, leaderMessage.leaderId);
+    }
+
 }
