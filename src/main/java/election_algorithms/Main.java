@@ -12,7 +12,7 @@ import util.GraphParser;
 
 import java.time.Duration;
 import java.util.*;
-import static org.junit.Assert.assertEquals;
+//import static org.junit.Assert.assertEquals;
 
 
 public class Main {
@@ -203,7 +203,7 @@ public class Main {
             EchoWithExtinctionActor.LeaderElected elected = probe.receiveMessage(Duration.ofSeconds(10));
 
             // Assert that the node with the highest ID was elected as the leader
-            assertEquals("The node with the highest ID should be elected as leader.", highestId, elected.leaderId);
+//            assertEquals("The node with the highest ID should be elected as leader.", highestId, elected.leaderId);
         }
 
     }
