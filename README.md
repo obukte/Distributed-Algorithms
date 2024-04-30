@@ -41,7 +41,7 @@ This repository contains Java implementations of various distributed algorithms,
       
 - `src/test/java`: Test suites for the source code.
   - `election_algorithms`: Test cases for election algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation.
-- `util`: Tests for utility classes to ensure accurate parsing and functionality.
+  - `util`: Tests for utility classes to ensure accurate parsing and functionality.
   - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation
 
 ### Prerequisites
