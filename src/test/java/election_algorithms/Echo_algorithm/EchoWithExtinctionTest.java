@@ -31,37 +31,6 @@ public class EchoWithExtinctionTest {
         testKit.shutdownTestKit();
     }
 
-    @Test
-    public void testEchoWithExtinctionElectionAlgorithm1() {
-        // Create a TestProbe to listen for the LeaderElected message
-        TestProbe<EchoWithExtinctionActor.LeaderElected> probe = testKit.createTestProbe();
-
-        // Define the network structure (as would be defined in a .dot file)
-        Map<Integer, ActorRef<EchoWithExtinctionActor.Message>> actors = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
-            // Pass the test probe to each actor
-            actors.put(i, testKit.spawn(EchoWithExtinctionActor.create(i, new HashMap<>(), probe), "actor" + i));
-        }
-
-        // Initialize each actor with its neighbors
-        actors.forEach((id, actor) -> {
-            Map<Integer, ActorRef<EchoWithExtinctionActor.Message>> neighbors = new HashMap<>();
-            // Assuming a ring topology for simplicity; in a real-world scenario, this should match the .dot file
-            neighbors.put((id + 9) % 10, actors.get((id + 9) % 10)); // Previous neighbor
-            neighbors.put((id + 1) % 10, actors.get((id + 1) % 10)); // Next neighbor
-            actor.tell(new EchoWithExtinctionActor.InitializeNeighbors(neighbors));
-        });
-
-        // Pick a node to start the election (for example, the node with the highest ID)
-        ActorRef<EchoWithExtinctionActor.Message> initiator = actors.get(actors.size() - 1);
-        initiator.tell(new EchoWithExtinctionActor.StartElection(actors.size() - 1));
-
-        // Wait for the LeaderElected message using the test probe
-        EchoWithExtinctionActor.LeaderElected elected = probe.receiveMessage();
-
-        // Assert that the highest ID was elected as the leader
-        assertEquals("The node with the highest ID should be elected as leader.", actors.size() - 1, elected.leaderId);
-    }
 
     @Test
     public void testEchoWithExtinctionElectionAlgorithm() {

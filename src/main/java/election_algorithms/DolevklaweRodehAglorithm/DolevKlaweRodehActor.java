@@ -3,7 +3,6 @@ package election_algorithms.DolevklaweRodehAglorithm;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.*;
-
 import java.util.HashMap;
 import java.util.Map;
 

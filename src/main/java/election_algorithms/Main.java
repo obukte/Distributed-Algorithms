@@ -3,7 +3,6 @@ package election_algorithms;
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
-import akka.actor.typed.javadsl.Behaviors;
 import election_algorithms.Chang_roberts.ChangRobertActor;
 import election_algorithms.DolevklaweRodehAglorithm.DolevKlaweRodehActor;
 import election_algorithms.echo_algorithm.EchoWithExtinctionActor;
@@ -12,12 +11,10 @@ import util.GraphParser;
 
 import java.time.Duration;
 import java.util.*;
-import static org.junit.Assert.assertEquals;
+
 
 
 public class Main {
-
-    //private static final String TEST_FILE_PATH = "src/main/resources/graph/your_graph_file.dot";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -201,10 +198,6 @@ public class Main {
 
             // Wait for the LeaderElected message using the test probe
             EchoWithExtinctionActor.LeaderElected elected = probe.receiveMessage(Duration.ofSeconds(10));
-
-            // Assert that the node with the highest ID was elected as the leader
-            assertEquals("The node with the highest ID should be elected as leader.", highestId, elected.leaderId);
         }
-
     }
-    }
+}
