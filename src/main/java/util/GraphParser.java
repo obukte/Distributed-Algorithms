@@ -52,13 +52,17 @@ public class GraphParser {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.contains("->")) {
+                if (line.contains("--") || line.contains("->")) { // Supports both directed ("->") and undirected ("--") edges
                     String[] parts = line.split(" ");
                     String source = parts[0].replace("\"", "");
                     String destination = parts[2].replace("\"", "");
 
                     double weight = extractWeight(line);
                     edges.add(new Edge(source, destination, weight));
+                    // If the edge is undirected, add the reverse direction as well
+                    if (line.contains("--")) {
+                        edges.add(new Edge(destination, source, weight));
+                    }
                 }
             }
         } catch (IOException e) {
@@ -66,7 +70,6 @@ public class GraphParser {
         }
         return edges;
     }
-
     private static double extractWeight(String line) {
         try {
             String weightStr = line.substring(line.indexOf("\"weight\"=") + 9, line.lastIndexOf("]"));
@@ -92,7 +95,7 @@ public class GraphParser {
     }
 
     public static void main(String[] args) {
-        String filePath = "src/main/resources/graph/NetGraph_17-03-24-12-50-04.ngs.dot";
+        String filePath = "target/test-classes/graph/Electiongraph2.dot";
         List<Edge> edges = parseDotFile(filePath);
         edges.forEach(System.out::println);
     }
