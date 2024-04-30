@@ -39,10 +39,10 @@ This repository contains Java implementations of various distributed algorithms,
 
 - 'src/main/java': Contains the source code for the project
     - `election_algorithms`: Implementation of elections algorithms for distributed system.
-      -`chang_roberts`: A ring-based leader election algorithm that is simple and efficient in terms of message complexity.
-      -`Franklins_aglortihms`: Undirected Ring based Leader Election System
-      -`Echo_algorithm`: A unique variant of the echo algorithm that emphasizes minimal message overhead and rapid termination.
-      -`Dolev-Klawe Rodeh`: Focuses on minimizing the number of messages required in dynamic ring topologies, making it suitable for volatile environments.
+        -`chang_roberts`: A ring-based leader election algorithm that is simple and efficient in terms of message complexity.
+        -`Franklins_aglortihms`: Undirected Ring based Leader Election System
+        -`Echo_algorithm`: A unique variant of the echo algorithm that emphasizes minimal message overhead and rapid termination.
+        -`Dolev-Klawe Rodeh`: Focuses on minimizing the number of messages required in dynamic ring topologies, making it suitable for volatile environments.
 
   - `src/test/java`: Test suites for the source code.
     - `election_algorithms`: Test cases for election algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation.
