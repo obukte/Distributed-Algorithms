@@ -43,11 +43,11 @@ This repository contains Java implementations of various distributed algorithms,
     - `chang_roberts`: A ring-based leader election algorithm that is simple and efficient in terms of message complexity.
     - `Echo_algorithm`: A unique variant of the echo algorithm that emphasizes minimal message overhead and rapid termination.
     - `Dolev-Klawe Rodeh`: Focuses on minimizing the number of messages required in dynamic ring topologies, making it suitable for volatile environments.
-      
-- `target/test-classes/graph`: Test suites for the source code.
+    - 
+- `src/test/java`: Test suites for the source code.
   - `election_algorithms`: Test cases for election algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation.
   - `util`: Tests for utility classes to ensure accurate parsing and functionality.
-  - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation
+  - `target/test-classes/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation
 
 ### Prerequisites
 
