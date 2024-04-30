@@ -12,11 +12,10 @@ This repository contains Java implementations of various distributed algorithms,
     - Lai-Yang algorithm
     - Peterson-Kearns Rollback Recovery Algorithm
 
-- Elections algorithms:
-    - Chang-roberts algorithm
+  - Elections algorithms:
+    - Chang-Roberts algorithm
     - Dolev-Klawe Rodeh algorithm
-    - Echo algorithm with Extinction
-
+    - Echo algorithm with Extinction algorithm
 
 
 ## Project Structure
