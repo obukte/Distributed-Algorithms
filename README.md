@@ -31,6 +31,19 @@ This repository contains Java implementations of various distributed algorithms,
   - `util`: Tests for utility classes to ensure accurate parsing and functionality.
       - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation.
 
+
+- `src/main/java`: Contains the source code for the project
+  - `election_algorithms`: Implementation of elections algorithms for distributed system.
+    - `chang_roberts`: A ring-based leader election algorithm that is simple and efficient in terms of message complexity.
+    - `Franklins_aglortihms`: Undirected Ring based Leader Election System
+    - `Echo_algorithm`: A unique variant of the echo algorithm that emphasizes minimal message overhead and rapid termination.
+    - `Dolev-Klawe Rodeh`: Focuses on minimizing the number of messages required in dynamic ring topologies, making it suitable for volatile environments.
+      
+- `src/test/java`: Test suites for the source code.
+  - `election_algorithms`: Test cases for election algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation.
+- `util`: Tests for utility classes to ensure accurate parsing and functionality.
+  - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation
+
 ### Prerequisites
 
 - Java JDK version 21.0.2
@@ -53,3 +66,5 @@ This repository contains Java implementations of various distributed algorithms,
 ### Simulation
 
 - To simulate any of the snapshot algorithms, run the Main class located at `src/main/java/snapshot_algorithms/Main.java` . This class provides a command-line interface to select different algorithms to simulate. Each option initiates a simulation using predefined .dot files, demonstrating the chosen algorithm's behavior within a configured network of actors.
+
+ - To simulate any of the election algorithms, run the Main class located at `src/main/java/election_algorithms/Main.java` . This class provides a command-line interface to select different algorithms to simulate. Each option initiates a simulation using predefined test files, demonstrating the chosen algorithm's behavior within a configured network of actors.
