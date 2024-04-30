@@ -1,4 +1,4 @@
-digraph "Net Graph for CHang-Roberts Algorithm"{
+digraph " Test Net Graph "{
 edge ["class"="link-class"]
 "0" -> "1" ["weight"="1.0"]
 "1" -> "2" ["weight"="1.1"]
