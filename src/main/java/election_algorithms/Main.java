@@ -14,9 +14,6 @@ import java.util.*;
 
 
 public class Main {
-
-    private static final String TEST_FILE_PATH = "src/main/resources/graph/NetGraph_17-03-24-12-50-04.ngs.dot";
-
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         ActorTestKit testKit = ActorTestKit.create();
