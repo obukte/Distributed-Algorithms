@@ -27,7 +27,7 @@ This repository contains Java implementations of various distributed algorithms,
         - `peterson_kearns`: Peterson-Kearns algorithm for centralized rollback recovery.
             - `CheckpointRecoveryManager.java`: Manages network configuration, initiates snapshots, and recovers actors upon crashes using snapshots and message logs.
             - `PetersonKearnsActor.java`: Represents a node in the network, capable of sending, receiving, and logging messages,
-    - `util`: Utility classes supporting algorithm functionality.
+        - `util`: Utility classes supporting algorithm functionality.
         - `GraphParser`: Parses .dot files from the `resources/graph/` directory to create a graph of actors, embodying the network topology for the simulation.
     - `resources`: Holds configuration settings and graph definitions.
         - `graph`: Directory containing the primary `.dot` file (e.g., `NetGraph.dot`) that represents the network graph used for the simulation.
