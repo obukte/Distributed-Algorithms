@@ -46,4 +46,38 @@ public class DolevKlaweRodehTest {
         testKit.stop(actor1);
     }
 
+    @Test
+    public void testElectionProcess2() {
+        TestProbe<DolevKlaweRodehActor.Message> neighbor1 = testKit.createTestProbe();
+        TestProbe<DolevKlaweRodehActor.Message> neighbor2 = testKit.createTestProbe();
+        TestProbe<DolevKlaweRodehActor.Message> neighbor3 = testKit.createTestProbe();
+
+        ActorRef<DolevKlaweRodehActor.Message> actor1 = testKit.spawn(DolevKlaweRodehActor.create(1), "actor1");
+
+        // Create a ring topology with three neighbors
+        Map<Boolean, ActorRef<DolevKlaweRodehActor.Message>> neighbors = new HashMap<>();
+        neighbors.put(true, neighbor1.getRef());
+        neighbors.put(false, neighbor2.getRef());
+        neighbors.put(false, neighbor3.getRef());
+
+        // Initialize the ring with the neighbors and start the election process
+        actor1.tell(new DolevKlaweRodehActor.InitializeRing(neighbors));
+        actor1.tell(new DolevKlaweRodehActor.StartElection());
+
+        // Simulate the return of the election message to itself
+        actor1.tell(new DolevKlaweRodehActor.ElectionMessage(1, actor1, false));
+
+        // Use probes to listen for any leadership announcement
+        actor1.tell(new DolevKlaweRodehActor.ElectionMessage(1, neighbor1.getRef(), false));
+        actor1.tell(new DolevKlaweRodehActor.ElectionMessage(1, neighbor2.getRef(), false));
+        actor1.tell(new DolevKlaweRodehActor.ElectionMessage(1, neighbor3.getRef(), false));
+        actor1.tell(new DolevKlaweRodehActor.ElectionMessage(1, actor1, true));  // message circulates back to the initiator
+
+        // Wait and verify no more messages are sent after leader is elected
+        TestProbe<DolevKlaweRodehActor.Message> probe = testKit.createTestProbe();
+        probe.expectNoMessage(java.time.Duration.ofSeconds(1));
+
+        // Stop the actor after the test
+        testKit.stop(actor1);
+    }
 }

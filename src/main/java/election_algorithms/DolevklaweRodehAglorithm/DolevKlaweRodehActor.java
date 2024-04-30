@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.Message> {
-
+    // Define the interface for all messages that can be handled by this actor.
     public interface Message {
     }
 
     public static final class StartElection implements Message {
     }
-
+   // Definition for message to start the election process.
     public static final class ElectionMessage implements Message {
         public final int electionId;
         public final ActorRef<Message> sender;
@@ -34,12 +34,12 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         }
     }
 
-    private final int id;
-    private boolean isActive;
-    private boolean parity;
-    private boolean isLeader;
-    private int electionId;
-    private Map<Boolean, ActorRef<Message>> neighbors = new HashMap<>();
+    private final int id; //Unique ID of the actor
+    private boolean isActive; //Flag to indicate if the actor is active
+    private boolean parity; //parity value
+    private boolean isLeader; // Flag to indicate if the actor is the leader
+    private int electionId; // ID of the ongoing election
+    private Map<Boolean, ActorRef<Message>> neighbors = new HashMap<>(); //to store the neighbor actors
 
     private DolevKlaweRodehActor(ActorContext<Message> context, int id) {
         super(context);
@@ -50,6 +50,7 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         context.getLog().info("Actor {} initialized, isActive: {}", id, isActive);
     }
 
+    //creating an instance of the actor
     public static Behavior<Message> create(int id) {
         return Behaviors.setup(context -> new DolevKlaweRodehActor(context, id));
     }
@@ -62,6 +63,7 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         }
     }
 
+    //Define behavior for receiving messages
     @Override
     public Receive<Message> createReceive() {
         return newReceiveBuilder()
@@ -72,6 +74,7 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
                 .build();
     }
 
+    //Handler for the StartElection Message
     private Behavior<Message> onStartElection(StartElection message) {
         isActive = true;
         getContext().getLog().info("Actor {} starting election, isActive set to true", id);
@@ -82,12 +85,14 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         return this;
     }
 
+    // Handler for the InitializeRing message
     private Behavior<Message> onInitializeRing(InitializeRing message) {
         this.neighbors = message.actorRing;
         getContext().getLog().info("Ring initialized for Actor {}", id);
         return this;
     }
 
+    // Handler for the ElectionMessage message
     private Behavior<Message> onElectionMessage(ElectionMessage message) {
         getContext().getLog().info("Actor {} received ElectionMessage from Actor {}, electionId: {}, parity: {}", id, message.sender.path().name(), message.electionId, message.parity);
 
@@ -115,7 +120,7 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         return this;
     }
 
-
+    // Handler for the LeaderElectedMessage message
     private Behavior<Message> onLeaderElected(LeaderElectedMessage message) {
         if (message.leaderId != this.id) {
             this.isLeader = false;
@@ -125,7 +130,7 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         return this;
     }
 
-
+    // Method to forward election messages to neighbors
     private void forwardElectionMessage(ElectionMessage message) {
         if (!this.isLeader && (this.isActive || this.parity == message.parity)) {
             ActorRef<Message> nextNeighbor = this.neighbors.get(true);
@@ -134,6 +139,7 @@ public class DolevKlaweRodehActor extends AbstractBehavior<DolevKlaweRodehActor.
         }
     }
 
+    // Method to broadcast leader election messages to neighbors
     private void broadcastLeaderElection() {
         LeaderElectedMessage leaderElectedMessage = new LeaderElectedMessage(this.id);
         for (ActorRef<Message> neighbor : this.neighbors.values()) {
