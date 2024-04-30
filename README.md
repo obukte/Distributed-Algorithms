@@ -12,6 +12,13 @@ This repository contains Java implementations of various distributed algorithms,
     - Lai-Yang algorithm
     - Peterson-Kearns Rollback Recovery Algorithm
 
+- Elections algorithms:
+    - Chang-roberts algorithm
+    - Dolev-Klawe Rodeh algorithm
+    - Echo algorithm with Extinction
+
+
+
 ## Project Structure
 
 - `src/main/java`: Contains the source code for the project.
@@ -35,7 +42,6 @@ This repository contains Java implementations of various distributed algorithms,
 - `src/main/java`: Contains the source code for the project
   - `election_algorithms`: Implementation of elections algorithms for distributed system.
     - `chang_roberts`: A ring-based leader election algorithm that is simple and efficient in terms of message complexity.
-    - `Franklins_aglortihms`: Undirected Ring based Leader Election System
     - `Echo_algorithm`: A unique variant of the echo algorithm that emphasizes minimal message overhead and rapid termination.
     - `Dolev-Klawe Rodeh`: Focuses on minimizing the number of messages required in dynamic ring topologies, making it suitable for volatile environments.
       
