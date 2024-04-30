@@ -17,7 +17,6 @@ This repository contains Java implementations of various distributed algorithms,
     - Dolev-Klawe Rodeh algorithm
     - Echo algorithm with Extinction algorithm
 
-
 ## Project Structure
 
 - `src/main/java`: Contains the source code for the project.
@@ -36,7 +35,6 @@ This repository contains Java implementations of various distributed algorithms,
     - `snapshot_algorithms`: Test cases for snapshot algorithms. Most tests verify the algorithm's correctness by examining the logs generated during the simulation. After running the tests, snapshot files for various actors and states in the system are generated and saved in the `snapshots` directory.
   - `util`: Tests for utility classes to ensure accurate parsing and functionality.
       - `resources/graph`: Contains multiple `.dot` files used for component testing of graph parsing and actor system simulation.
-
 
 - `src/main/java`: Contains the source code for the project
   - `election_algorithms`: Implementation of elections algorithms for distributed system.
